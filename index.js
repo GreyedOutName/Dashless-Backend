@@ -1,3 +1,4 @@
+const { createClient } = require('@supabase/supabase-js');
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
@@ -11,6 +12,12 @@ app.use(express.json());
 const payrexSecretApiKey = process.env.PAYREX_SECRET_KEY;
 const payrexClient = payrex(payrexSecretApiKey);
 
+//supabase
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_KEY = process.env.SUPABASE_KEY;
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+module.exports = supabase;
+
 // Endpoint to create a PaymentIntent
 app.post('/create-payment-intent', async (req, res) => {
   try {
@@ -19,7 +26,7 @@ app.post('/create-payment-intent', async (req, res) => {
     const paymentIntent = await payrexClient.paymentIntents.create({
       amount,
       currency: 'PHP',
-      payment_methods: ['qrph'],
+      payment_methods: ['qrph','maya'],
     });
 
     res.json({ clientSecret: paymentIntent.clientSecret });
@@ -31,6 +38,21 @@ app.post('/create-payment-intent', async (req, res) => {
 
 // Optional health check
 app.get('/', (req, res) => res.send('PayRex backend running!'));
+
+//Get Orders Table
+app.get('/orders_table', async (req, res) => {
+  const { data, error } = await supabase.from('orders_table').select('*');
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data);
+});
+
+//Change Order Status
+app.post('/order-status', async (req, res) => {
+  const { status } = req.body;
+  const { data, error } = await supabase.from('orders_table').insert([{ name, email }]);
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data);
+});
 
 // Start server
 const PORT = process.env.PORT || 3000;
