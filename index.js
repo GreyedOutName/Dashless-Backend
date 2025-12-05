@@ -39,6 +39,22 @@ app.post('/create-payment-intent', async (req, res) => {
 // Optional health check
 app.get('/', (req, res) => res.send('PayRex backend running!'));
 
+// Supabase Signup
+app.post('/signup', async (req, res) => {
+  const { email, password } = req.body;
+  const { data, error } = await supabase.auth.signUp({ email, password });
+  if (error) return res.status(400).json({ error: error.message });
+  res.json(data);
+});
+
+// Supabase Sign-in
+app.post('/login', async (req, res) => {
+  const { email, password } = req.body;
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  if (error) return res.status(400).json({ error: error.message });
+  res.json(data);
+});
+
 //Get Orders Table
 app.get('/orders_table', async (req, res) => {
   const { data, error } = await supabase.from('orders_table').select('*');
@@ -46,12 +62,66 @@ app.get('/orders_table', async (req, res) => {
   res.json(data);
 });
 
+//Add New Order
+app.post('/order-add', async (req, res) => {
+  try {
+    const {
+      rider_id,customer_name,customer_address,cod_amount,status
+    } = req.body;
+
+    // Insert into Supabase table
+    const { data, error } = await supabase.from('orders_table').insert([
+      {
+        rider_id,          // optional, can be null
+        customer_name,     // optional, defaults to 'default-text' if not provided
+        customer_address,  // optional
+        cod_amount,        // optional, defaults to 0 if not provided
+        status             // optional, defaults to 'default-text' if not provided
+      }
+    ]);
+
+    if (error) {
+      return res.status(500).json({ error: error.message });
+    }
+
+    // Return the inserted row(s)
+    res.status(201).json(data);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+
 //Change Order Status
-app.post('/order-status', async (req, res) => {
-  const { status } = req.body;
-  const { data, error } = await supabase.from('orders_table').insert([{ name, email }]);
-  if (error) return res.status(500).json({ error: error.message });
-  res.json(data);
+app.put('/order-status/', async (req, res) => {
+  try {
+    const { id } = req.params;          // Get order id from URL
+    const { status } = req.body;        // Get new status from request body
+
+    if (!status) {
+      return res.status(400).json({ error: 'Status is required' });
+    }
+
+    // Update the order with the matching id
+    const { data, error } = await supabase
+      .from('orders_table')
+      .update({ status })
+      .eq('id', id);  // Filter by primary key
+
+    if (error) {
+      return res.status(500).json({ error: error.message });
+    }
+
+    if (data.length === 0) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+
+    res.json({ message: 'Order status updated', order: data[0] });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 // Start server
