@@ -143,18 +143,20 @@ app.put('/order-status/:id', async (req, res) => {
 // Count completed orders created today
 app.get('/orders-today/completed-count', async (req, res) => {
   try {
-    const { data, error } = await supabase
+    const start = new Date().toISOString().split("T")[0] + "T00:00:00";
+    const end   = new Date().toISOString().split("T")[0] + "T23:59:59";
+
+    const { count, error } = await supabase
       .from("orders_table")
-      .select("id", { count: "exact", head: true }) // no rows returned, only count
+      .select("*", { count: "exact", head: true }) // head:true = NO DATA, only count
       .eq("status", "Completed")
-      .gte("created_at", new Date().toISOString().split("T")[0] + "T00:00:00")
-      .lte("created_at", new Date().toISOString().split("T")[0] + "T23:59:59");
+      .gte("created_at", start)
+      .lte("created_at", end);
 
-    if (error) {
-      return res.status(500).json({ error: error.message });
-    }
+    if (error) return res.status(500).json({ error: error.message });
 
-    res.json({ count: data.length || 0 });
+    res.json({ count: count || 0 });
+
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Internal server error" });
