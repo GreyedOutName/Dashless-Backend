@@ -124,14 +124,14 @@ app.put('/order-status/:id', async (req, res) => {
       return res.status(500).json({ error: error.message });
     }
 
-    if (data.length === 0) {
-      return res.status(404).json({ error: 'Order not found' });
+    if (!data || data.length === 0) {
+      return res.status(404).json({ message: 'Order not found', order: null });
     }
 
     res.json({ message: 'Order status updated', order: data[0] });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Internal server error3' });
   }
 });
 
