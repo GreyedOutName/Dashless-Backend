@@ -77,17 +77,18 @@ app.get('/orders_table', async (req, res) => {
 app.post('/order-add', async (req, res) => {
   try {
     const {
-      rider_id,customer_name,customer_address,cod_amount,status
+      rider_id,customer_name,customer_address,cod_amount,status,payment_type
     } = req.body;
 
     // Insert into Supabase table
     const { data, error } = await supabase.from('orders_table').insert([
       {
-        rider_id,          // optional, can be null
-        customer_name,     // optional, defaults to 'default-text' if not provided
-        customer_address,  // optional
-        cod_amount,        // optional, defaults to 0 if not provided
-        status             // optional, defaults to 'default-text' if not provided
+        rider_id,          
+        customer_name,     // defaults to 'default-text' if not provided
+        customer_address,  
+        cod_amount,        // defaults to 0 if not provided
+        status,            // defaults to 'default-text' if not provided
+        payment_type,      // defaults to 'cash'
       }
     ]);
 
