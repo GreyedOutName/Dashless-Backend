@@ -105,7 +105,7 @@ app.post('/order-add', async (req, res) => {
 
 
 //Change Order Status
-app.put('/order-status/', async (req, res) => {
+app.put('/order-status/:id', async (req, res) => {
   try {
     const { id } = req.params;          // Get order id from URL
     const { status } = req.body;        // Get new status from request body
