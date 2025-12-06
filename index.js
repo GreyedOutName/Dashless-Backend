@@ -47,12 +47,23 @@ app.post('/signup', async (req, res) => {
   res.json(data);
 });
 
-// Supabase Sign-in
+// Supabase Login
 app.post('/login', async (req, res) => {
-  const { email, password } = req.body;
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error) return res.status(400).json({ error: error.message });
-  res.json(data);
+  try {
+    const { email, password } = req.body;
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
+    if (error) return res.status(400).json({ error: error.message });
+
+    if (!data.session || !data.user) {
+      return res.status(401).json({ error: "Invalid login credentials" });
+    }
+
+    res.json(data);
+  } catch (err) {
+    console.error("Unexpected login error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
 });
 
 //Get Orders Table
