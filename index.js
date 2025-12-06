@@ -140,6 +140,92 @@ app.put('/order-status/:id', async (req, res) => {
   }
 });
 
+// Count completed orders created today
+app.get('/orders-today/completed-count', async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from("orders_table")
+      .select("id", { count: "exact", head: true }) // no rows returned, only count
+      .eq("status", "Completed")
+      .gte("created_at", new Date().toISOString().split("T")[0] + "T00:00:00")
+      .lte("created_at", new Date().toISOString().split("T")[0] + "T23:59:59");
+
+    if (error) {
+      return res.status(500).json({ error: error.message });
+    }
+
+    res.json({ count: data.length || 0 });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+app.get('/orders-today/total-cod', async (req, res) => {
+  try {
+    const today = new Date().toISOString().split("T")[0];
+
+    const { data, error } = await supabase
+      .from("orders_table")
+      .select("cod_amount")
+      .eq("status", "Completed")
+      .gte("created_at", `${today}T00:00:00`)
+      .lte("created_at", `${today}T23:59:59`);
+
+    if (error) return res.status(500).json({ error: error.message });
+
+    const total = data.reduce((sum, row) => sum + (row.cod_amount || 0), 0);
+
+    res.json({ total });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+app.get('/orders-today/payment-percentages', async (req, res) => {
+  try {
+    const today = new Date().toISOString().split("T")[0];
+
+    const { data, error } = await supabase
+      .from("orders_table")
+      .select("cod_amount, payment_type")
+      .eq("status", "Completed")
+      .gte("created_at", `${today}T00:00:00`)
+      .lte("created_at", `${today}T23:59:59`);
+
+    if (error) return res.status(500).json({ error: error.message });
+
+    let cashTotal = 0;
+    let qrphTotal = 0;
+
+    data.forEach((row) => {
+      const amount = row.cod_amount || 0;
+      if (row.payment_type === "cash") cashTotal += amount;
+      if (row.payment_type === "qrph") qrphTotal += amount;
+    });
+
+    const total = cashTotal + qrphTotal;
+
+    // Avoid division by zero
+    const cashPercent = total === 0 ? 0 : (cashTotal / total) * 100;
+    const qrphPercent = total === 0 ? 0 : (qrphTotal / total) * 100;
+
+    res.json({
+      cashTotal,
+      qrphTotal,
+      totalCod: total,
+      cashPercent: Number(cashPercent.toFixed(2)),
+      qrphPercent: Number(qrphPercent.toFixed(2)),
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+
 // Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
