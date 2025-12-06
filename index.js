@@ -68,7 +68,11 @@ app.post('/login', async (req, res) => {
 
 //Get Orders Table
 app.get('/orders_table', async (req, res) => {
-  const { data, error } = await supabase.from('orders_table').select('*');
+  const { data, error } = await supabase
+    .from('orders_table')
+    .select('*')
+    .order('created_at', { ascending: false }); // descending order
+
   if (error) return res.status(500).json({ error: error.message });
   res.json(data);
 });
