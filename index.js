@@ -26,7 +26,7 @@ app.post('/create-payment-intent', async (req, res) => {
     const paymentIntent = await payrexClient.paymentIntents.create({
       amount,
       currency: 'PHP',
-      payment_methods: ['qrph','maya'],
+      payment_methods: ['qrph'],
     });
 
     res.json({ clientSecret: paymentIntent.clientSecret });
